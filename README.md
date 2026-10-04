@@ -50,7 +50,45 @@ class PinPage extends StatelessWidget {
 }
 ```
 
-Biometric verification is app-provided. Set `fingerVerify: true` to make the
-lock screen call `onSuccess` automatically once verification succeeds, and use
-`fingerFunction` to run your own biometric prompt when the fingerprint area is
-tapped.
+## Biometrics
+
+Biometric verification is app-provided. The package never shows a biometric
+prompt itself.
+
+Keep `fingerVerify` set to `false` and run your own biometric prompt (for
+example with `local_auth`). Set `fingerVerify: true` only after your prompt
+returns success. The lock screen then calls `onSuccess` automatically, either
+when `fingerVerify` changes from `false` to `true` or in `initState` when it is
+already `true`.
+
+To show a tappable fingerprint area, set `showFingerPass: true` and provide
+`fingerPrintImage`. Tapping the area calls `fingerFunction`, which is typically
+where you start your biometric prompt:
+
+```dart
+var fingerVerified = false;
+
+LockScreen(
+  // ...
+  showFingerPass: true,
+  fingerPrintImage: const Icon(Icons.fingerprint),
+  fingerVerify: fingerVerified,
+  fingerFunction: () async {
+    if (await runYourBiometricPrompt()) {
+      setState(() => fingerVerified = true);
+    }
+  },
+);
+```
+
+> **Warning:** Setting `fingerVerify: true` unconditionally, or before your own
+> prompt succeeds, bypasses the PIN and calls `onSuccess` immediately.
+
+## Configuration notes
+
+- `passLength` accepts values from 1 to 8. Values outside that range fail an
+  assertion.
+- `styles` passed to `LockScreen` takes precedence over a `PinLockTheme`
+  registered through `ThemeData.extensions`.
+- `PinLockStrings` exposes `clearButtonLabel` and `backspaceButtonLabel` in
+  addition to the wrong-passcode dialog strings.

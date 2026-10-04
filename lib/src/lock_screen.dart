@@ -149,6 +149,7 @@ class LockScreenState extends State<LockScreen> {
       return;
     }
     if (isAccepted) {
+      _fingerTimer?.cancel();
       setState(() {
         _currentState = CodePanelStatus.accepted;
         _inputCodes.clear();

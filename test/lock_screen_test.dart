@@ -166,6 +166,24 @@ void main() {
       expect(success, isTrue);
     });
 
+    testWidgets(
+      'cancels the pending biometric onSuccess when the passcode is accepted',
+      (tester) async {
+        var successCalls = 0;
+        await pumpLockScreen(
+          tester,
+          verify: (code) async => true,
+          onSuccess: () => successCalls++,
+          fingerVerify: true,
+        );
+
+        await enterDigits(tester, '1234');
+        await tester.pump(const Duration(milliseconds: 250));
+
+        expect(successCalls, 1);
+      },
+    );
+
     testWidgets('tapping the fingerprint image invokes fingerFunction', (
       tester,
     ) async {

@@ -42,9 +42,9 @@ class PinLockPage extends StatelessWidget {
       showWrongPassDialog: true,
       passCodeVerify: (code) async => code.join() == '1234',
       onSuccess: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unlocked')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Unlocked')));
       },
     );
   }
