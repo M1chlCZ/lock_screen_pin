@@ -1,0 +1,15 @@
+name: lock_screen_pin_example
+description: Example app for lock_screen_pin.
+publish_to: none
+version: 1.0.0
+environment:
+  sdk: ^3.11.0
+dependencies:
+  flutter:
+    sdk: flutter
+  lock_screen_pin:
+    path: ../
+dev_dependencies:
+  flutter_lints: ^6.0.0
+flutter:
+  uses-material-design: true
