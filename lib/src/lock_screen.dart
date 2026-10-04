@@ -69,7 +69,7 @@ class LockScreen extends StatefulWidget {
 
 /// State for [LockScreen].
 class LockScreenState extends State<LockScreen> {
-  var _enteredDigits = 0;
+  var _currentCodeLength = 0;
   final _inputCodes = <int>[];
   var _currentState = 0;
   Timer? _resetTimer;
@@ -81,7 +81,7 @@ class LockScreenState extends State<LockScreen> {
     if (widget.fingerVerify) {
       _fingerTimer = Timer(const Duration(milliseconds: 200), () {
         if (mounted) {
-          widget.fingerFunction?.call();
+          widget.onSuccess();
         }
       });
     }
@@ -101,12 +101,12 @@ class LockScreenState extends State<LockScreen> {
   }
 
   void _onCodeClick(int code) {
-    if (_enteredDigits < widget.passLength) {
+    if (_currentCodeLength < widget.passLength) {
       setState(() {
-        _enteredDigits++;
+        _currentCodeLength++;
         _inputCodes.add(code);
       });
-      if (_enteredDigits == widget.passLength) {
+      if (_currentCodeLength == widget.passLength) {
         _verifyPassCode();
       }
     }
@@ -145,25 +145,26 @@ class LockScreenState extends State<LockScreen> {
     }
     setState(() {
       _currentState = 0;
-      _enteredDigits = 0;
+      _currentCodeLength = 0;
       _inputCodes.clear();
     });
   }
 
   void _deleteCode() {
     setState(() {
-      if (_inputCodes.isNotEmpty) {
+      if (_currentCodeLength > 0) {
         _currentState = 0;
-        _inputCodes.removeLast();
+        _currentCodeLength--;
+        _inputCodes.removeAt(_currentCodeLength);
       }
     });
   }
 
   void _deleteAllCodes() {
     setState(() {
-      if (_inputCodes.isNotEmpty) {
+      if (_currentCodeLength > 0) {
         _currentState = 0;
-        _enteredDigits = 0;
+        _currentCodeLength = 0;
         _inputCodes.clear();
       }
     });
@@ -205,7 +206,6 @@ class LockScreenState extends State<LockScreen> {
     required Widget child,
     required VoidCallback onTap,
   }) {
-    final size = styles.keySize;
     return Align(
       child: Container(
         decoration: BoxDecoration(
@@ -214,8 +214,8 @@ class LockScreenState extends State<LockScreen> {
         ),
         child: ClipOval(
           child: SizedBox(
-            height: size,
-            width: size,
+            height: 75,
+            width: 75,
             child: Material(
               color: Theme.of(context).canvasColor,
               child: InkWell(
@@ -250,7 +250,7 @@ class LockScreenState extends State<LockScreen> {
     return _buildKey(
       styles: styles,
       onTap: () {
-        if (_inputCodes.isNotEmpty) {
+        if (_currentCodeLength > 0) {
           _deleteAllCodes();
         }
       },
@@ -262,7 +262,7 @@ class LockScreenState extends State<LockScreen> {
     return _buildKey(
       styles: styles,
       onTap: () {
-        if (_inputCodes.isNotEmpty) {
+        if (_currentCodeLength > 0) {
           _deleteCode();
         }
       },
@@ -346,15 +346,12 @@ class LockScreenState extends State<LockScreen> {
                             overscroll.disallowIndicator();
                             return true;
                           },
-                          child: GridView(
+                          child: GridView.count(
                             physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: 3,
+                            childAspectRatio: 1.0,
+                            mainAxisSpacing: 0,
                             padding: const EdgeInsets.all(20),
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  mainAxisSpacing: 0,
-                                  mainAxisExtent: styles.keySize,
-                                ),
                             children: <Widget>[
                               _buildNumberKey(1, styles),
                               _buildNumberKey(2, styles),

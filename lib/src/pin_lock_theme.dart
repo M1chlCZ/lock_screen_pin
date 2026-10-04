@@ -1,5 +1,3 @@
-import 'dart:ui' show lerpDouble;
-
 import 'package:flutter/material.dart';
 
 /// Theme values used by the lock screen widget.
@@ -16,14 +14,12 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> {
     Color? dotFillColor,
     Color? backgroundColor,
     List<BoxShadow>? keyShadows,
-    double? keySize,
     TextStyle? titleStyle,
   }) : _numberColor = numberColor,
        _dotBorderColor = dotBorderColor,
        _dotFillColor = dotFillColor,
        _backgroundColor = backgroundColor,
        _keyShadows = keyShadows,
-       _keySize = keySize,
        _titleStyle = titleStyle;
 
   static const List<BoxShadow> _defaultKeyShadows = <BoxShadow>[
@@ -44,7 +40,6 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> {
   final Color? _dotFillColor;
   final Color? _backgroundColor;
   final List<BoxShadow>? _keyShadows;
-  final double? _keySize;
   final TextStyle? _titleStyle;
 
   /// Color of the keypad numbers and icons.
@@ -72,11 +67,6 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> {
   /// Defaults to two soft shadows that give the keys a raised look.
   List<BoxShadow> get keyShadows => _keyShadows ?? _defaultKeyShadows;
 
-  /// Width and height of every keypad key.
-  ///
-  /// Defaults to 75.
-  double get keySize => _keySize ?? 75;
-
   /// Text style of the screen title.
   ///
   /// When null the widget derives a bold, white 16px style from
@@ -90,7 +80,6 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> {
     Color? dotFillColor,
     Color? backgroundColor,
     List<BoxShadow>? keyShadows,
-    double? keySize,
     TextStyle? titleStyle,
   }) {
     return PinLockTheme(
@@ -99,7 +88,6 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> {
       dotFillColor: dotFillColor ?? _dotFillColor,
       backgroundColor: backgroundColor ?? _backgroundColor,
       keyShadows: keyShadows ?? _keyShadows,
-      keySize: keySize ?? _keySize,
       titleStyle: titleStyle ?? _titleStyle,
     );
   }
@@ -115,7 +103,6 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> {
       dotFillColor: Color.lerp(_dotFillColor, other._dotFillColor, t),
       backgroundColor: Color.lerp(_backgroundColor, other._backgroundColor, t),
       keyShadows: BoxShadow.lerpList(_keyShadows, other._keyShadows, t),
-      keySize: lerpDouble(_keySize, other._keySize, t),
       titleStyle: TextStyle.lerp(_titleStyle, other._titleStyle, t),
     );
   }

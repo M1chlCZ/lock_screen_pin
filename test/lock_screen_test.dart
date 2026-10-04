@@ -10,7 +10,12 @@ void main() {
     int passLength = 4,
     bool fingerVerify = false,
     VoidCallback? fingerFunction,
+    bool showFingerPass = false,
+    Widget? fingerPrintImage,
   }) {
+    tester.view.physicalSize = const Size(700, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     return tester.pumpWidget(
       MaterialApp(
         home: LockScreen(
@@ -20,6 +25,8 @@ void main() {
           onSuccess: onSuccess ?? () {},
           fingerVerify: fingerVerify,
           fingerFunction: fingerFunction,
+          showFingerPass: showFingerPass,
+          fingerPrintImage: fingerPrintImage,
         ),
       ),
     );
@@ -90,7 +97,9 @@ void main() {
     expect(attempts, 1);
   });
 
-  testWidgets('backspace removes only the last entered digit', (tester) async {
+  testWidgets('backspace decrements the code length before verification', (
+    tester,
+  ) async {
     List<int>? received;
     await pumpLockScreen(
       tester,
@@ -107,7 +116,12 @@ void main() {
     await tester.tap(find.text('4'));
     await tester.pump();
 
-    expect(received, [1, 3, 4]);
+    expect(received, isNull);
+
+    await tester.tap(find.text('5'));
+    await tester.pump();
+
+    expect(received, [1, 3, 4, 5]);
   });
 
   testWidgets('clear button resets all entered digits', (tester) async {
@@ -132,19 +146,38 @@ void main() {
     expect(received, [5, 6, 7, 8]);
   });
 
-  testWidgets('auto-invokes fingerFunction when fingerVerify is true', (
+  testWidgets('auto-invokes onSuccess when fingerVerify is true', (
     tester,
   ) async {
-    var called = false;
+    var success = false;
     await pumpLockScreen(
       tester,
       verify: (code) async => false,
+      onSuccess: () => success = true,
       fingerVerify: true,
-      fingerFunction: () => called = true,
+      fingerFunction: () {},
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    expect(called, isTrue);
+    expect(success, isTrue);
+  });
+
+  testWidgets('tapping the fingerprint image invokes fingerFunction', (
+    tester,
+  ) async {
+    var calls = 0;
+    await pumpLockScreen(
+      tester,
+      verify: (code) async => false,
+      showFingerPass: true,
+      fingerPrintImage: const Icon(Icons.fingerprint),
+      fingerFunction: () => calls++,
+    );
+
+    await tester.tap(find.byIcon(Icons.fingerprint));
+    await tester.pump();
+
+    expect(calls, 1);
   });
 
   test('rejects a passcode longer than 8 digits', () {
