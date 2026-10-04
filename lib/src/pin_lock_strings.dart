@@ -8,6 +8,8 @@ class PinLockStrings {
     this.wrongPassTitle = 'Wrong passcode',
     this.wrongPassContent = 'The passcode you entered is incorrect.',
     this.wrongPassCancelButtonText = 'OK',
+    this.clearButtonLabel = 'Clear',
+    this.backspaceButtonLabel = 'Backspace',
   });
 
   /// Title shown at the top of the wrong passcode dialog.
@@ -18,4 +20,10 @@ class PinLockStrings {
 
   /// Label of the button that dismisses the wrong passcode dialog.
   final String wrongPassCancelButtonText;
+
+  /// Accessibility label of the keypad key that clears all entered digits.
+  final String clearButtonLabel;
+
+  /// Accessibility label of the keypad key that deletes the last digit.
+  final String backspaceButtonLabel;
 }

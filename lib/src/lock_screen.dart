@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 
@@ -9,8 +8,17 @@ import 'pin_lock_theme.dart';
 /// Verifies an entered passcode and reports whether it is accepted.
 typedef PassCodeVerify = Future<bool> Function(List<int> passcode);
 
-/// Signature for a callback that deletes the last entered passcode digit.
-typedef DeleteCode = void Function();
+/// Verification status shown by [CodePanel].
+enum CodePanelStatus {
+  /// No verification result has been reported yet.
+  idle,
+
+  /// The last entered passcode was accepted.
+  accepted,
+
+  /// The last entered passcode was rejected.
+  rejected,
+}
 
 /// A PIN/passcode lock screen with a numeric keypad and passcode dots.
 class LockScreen extends StatefulWidget {
@@ -28,7 +36,8 @@ class LockScreen extends StatefulWidget {
     this.showWrongPassDialog = false,
     this.strings = const PinLockStrings(),
     this.styles,
-  }) : assert(passLength <= 8);
+  }) : assert(passLength > 0),
+       assert(passLength <= 8);
 
   /// Called when the entered passcode is accepted.
   final VoidCallback onSuccess;
@@ -36,7 +45,7 @@ class LockScreen extends StatefulWidget {
   /// Title displayed above the passcode dots.
   final String title;
 
-  /// Number of digits in the passcode. Must not exceed 8.
+  /// Number of digits in the passcode. Must be between 1 and 8.
   final int passLength;
 
   /// Verifies the entered passcode.
@@ -71,7 +80,7 @@ class LockScreen extends StatefulWidget {
 class LockScreenState extends State<LockScreen> {
   var _currentCodeLength = 0;
   final _inputCodes = <int>[];
-  var _currentState = 0;
+  var _currentState = CodePanelStatus.idle;
   Timer? _resetTimer;
   Timer? _fingerTimer;
 
@@ -79,11 +88,17 @@ class LockScreenState extends State<LockScreen> {
   void initState() {
     super.initState();
     if (widget.fingerVerify) {
-      _fingerTimer = Timer(const Duration(milliseconds: 200), () {
-        if (mounted) {
-          widget.onSuccess();
-        }
-      });
+      _scheduleFingerSuccess();
+    }
+  }
+
+  @override
+  void didUpdateWidget(LockScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.fingerVerify && !oldWidget.fingerVerify) {
+      _scheduleFingerSuccess();
+    } else if (!widget.fingerVerify && oldWidget.fingerVerify) {
+      _fingerTimer?.cancel();
     }
   }
 
@@ -91,7 +106,17 @@ class LockScreenState extends State<LockScreen> {
   void dispose() {
     _resetTimer?.cancel();
     _fingerTimer?.cancel();
+    _inputCodes.clear();
     super.dispose();
+  }
+
+  void _scheduleFingerSuccess() {
+    _fingerTimer?.cancel();
+    _fingerTimer = Timer(const Duration(milliseconds: 200), () {
+      if (mounted) {
+        widget.onSuccess();
+      }
+    });
   }
 
   PinLockTheme _resolveStyles(BuildContext context) {
@@ -112,25 +137,31 @@ class LockScreenState extends State<LockScreen> {
     }
   }
 
-  void _verifyPassCode() {
-    widget.passCodeVerify(List<int>.of(_inputCodes)).then((isAccepted) {
-      if (!mounted) {
-        return;
-      }
-      if (isAccepted) {
-        setState(() {
-          _currentState = 1;
-        });
-        widget.onSuccess();
-      } else {
-        _handleWrongPassCode();
-      }
-    });
+  Future<void> _verifyPassCode() async {
+    final passcode = List<int>.of(_inputCodes);
+    var isAccepted = false;
+    try {
+      isAccepted = await widget.passCodeVerify(passcode);
+    } catch (_) {
+      isAccepted = false;
+    }
+    if (!mounted) {
+      return;
+    }
+    if (isAccepted) {
+      setState(() {
+        _currentState = CodePanelStatus.accepted;
+        _inputCodes.clear();
+      });
+      widget.onSuccess();
+    } else {
+      _handleWrongPassCode();
+    }
   }
 
   void _handleWrongPassCode() {
     setState(() {
-      _currentState = 2;
+      _currentState = CodePanelStatus.rejected;
     });
     _resetTimer?.cancel();
     _resetTimer = Timer(const Duration(milliseconds: 1000), _resetCodes);
@@ -144,7 +175,7 @@ class LockScreenState extends State<LockScreen> {
       return;
     }
     setState(() {
-      _currentState = 0;
+      _currentState = CodePanelStatus.idle;
       _currentCodeLength = 0;
       _inputCodes.clear();
     });
@@ -153,7 +184,7 @@ class LockScreenState extends State<LockScreen> {
   void _deleteCode() {
     setState(() {
       if (_currentCodeLength > 0) {
-        _currentState = 0;
+        _currentState = CodePanelStatus.idle;
         _currentCodeLength--;
         _inputCodes.removeAt(_currentCodeLength);
       }
@@ -163,7 +194,7 @@ class LockScreenState extends State<LockScreen> {
   void _deleteAllCodes() {
     setState(() {
       if (_currentCodeLength > 0) {
-        _currentState = 0;
+        _currentState = CodePanelStatus.idle;
         _currentCodeLength = 0;
         _inputCodes.clear();
       }
@@ -205,23 +236,31 @@ class LockScreenState extends State<LockScreen> {
     required PinLockTheme styles,
     required Widget child,
     required VoidCallback onTap,
+    required String semanticsLabel,
   }) {
     return Align(
-      child: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: styles.keyShadows,
-        ),
-        child: ClipOval(
-          child: SizedBox(
-            height: 75,
-            width: 75,
-            child: Material(
-              color: Theme.of(context).canvasColor,
-              child: InkWell(
-                splashColor: Colors.white30,
-                onTap: onTap,
-                child: Center(child: child),
+      child: Semantics(
+        container: true,
+        button: true,
+        label: semanticsLabel,
+        onTap: onTap,
+        excludeSemantics: true,
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: styles.keyShadows,
+          ),
+          child: ClipOval(
+            child: SizedBox(
+              height: 75,
+              width: 75,
+              child: Material(
+                color: styles.keyColor ?? Theme.of(context).canvasColor,
+                child: InkWell(
+                  splashColor: Colors.white30,
+                  onTap: onTap,
+                  child: Center(child: child),
+                ),
               ),
             ),
           ),
@@ -235,6 +274,7 @@ class LockScreenState extends State<LockScreen> {
     return _buildKey(
       styles: styles,
       onTap: () => _onCodeClick(number),
+      semanticsLabel: number.toString(),
       child: Text(
         number.toString(),
         style: (textTheme.headlineMedium ?? const TextStyle()).copyWith(
@@ -254,6 +294,7 @@ class LockScreenState extends State<LockScreen> {
           _deleteAllCodes();
         }
       },
+      semanticsLabel: widget.strings.clearButtonLabel,
       child: Icon(Icons.close, size: 30, color: styles.numberColor),
     );
   }
@@ -266,6 +307,7 @@ class LockScreenState extends State<LockScreen> {
           _deleteCode();
         }
       },
+      semanticsLabel: widget.strings.backspaceButtonLabel,
       child: Icon(Icons.arrow_back, size: 30, color: styles.numberColor),
     );
   }
@@ -306,15 +348,20 @@ class LockScreenState extends State<LockScreen> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: <Widget>[
-                            SizedBox(height: Platform.isIOS ? 100 : 100),
+                            const SizedBox(height: 100),
                             Text(widget.title, style: titleStyle),
-                            SizedBox(height: Platform.isIOS ? 20 : 30),
+                            SizedBox(
+                              height:
+                                  Theme.of(context).platform ==
+                                      TargetPlatform.iOS
+                                  ? 20
+                                  : 30,
+                            ),
                             CodePanel(
                               codeLength: widget.passLength,
-                              currentLength: _inputCodes.length,
+                              currentLength: _currentCodeLength,
                               dotBorderColor: styles.dotBorderColor,
                               dotFillColor: styles.dotFillColor,
-                              deleteCode: _deleteCode,
                               fingerVerify: widget.fingerVerify,
                               status: _currentState,
                             ),
@@ -337,7 +384,9 @@ class LockScreenState extends State<LockScreen> {
                   ),
                 ),
                 Expanded(
-                  flex: Platform.isIOS ? 10 : 8,
+                  flex: Theme.of(context).platform == TargetPlatform.iOS
+                      ? 10
+                      : 8,
                   child: Container(
                     padding: const EdgeInsets.only(left: 0, top: 0),
                     child:
@@ -388,13 +437,11 @@ class CodePanel extends StatelessWidget {
     required this.currentLength,
     this.dotBorderColor = Colors.white,
     this.dotFillColor = Colors.transparent,
-    this.deleteCode,
     this.fingerVerify = false,
-    this.status = 0,
+    this.status = CodePanelStatus.idle,
   }) : assert(codeLength > 0),
        assert(currentLength >= 0),
-       assert(currentLength <= codeLength),
-       assert(status == 0 || status == 1 || status == 2);
+       assert(currentLength <= codeLength);
 
   /// Total number of dots to display.
   final int codeLength;
@@ -408,14 +455,11 @@ class CodePanel extends StatelessWidget {
   /// Fill color of an empty dot.
   final Color dotFillColor;
 
-  /// Callback invoked when the panel is asked to delete a digit.
-  final DeleteCode? deleteCode;
-
   /// Whether fingerprint verification is active.
   final bool fingerVerify;
 
-  /// Current verification status: 0 idle, 1 accepted, 2 rejected.
-  final int status;
+  /// Current verification status.
+  final CodePanelStatus status;
 
   Widget _buildDot({
     required double size,
@@ -454,10 +498,10 @@ class CodePanel extends StatelessWidget {
         );
       }
     } else {
-      if (status == 1) {
+      if (status == CodePanelStatus.accepted) {
         color = Colors.green.shade500;
       }
-      if (status == 2) {
+      if (status == CodePanelStatus.rejected) {
         color = Colors.red.shade500;
       }
       for (var i = 1; i <= codeLength; i++) {
