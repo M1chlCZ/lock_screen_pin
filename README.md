@@ -13,6 +13,16 @@ themeable colors and strings.
 - Theming through `PinLockTheme`, including registration as a `ThemeExtension`
 - Configurable strings through `PinLockStrings`
 
+## Install
+
+`lock_screen_pin` is not published on pub.dev yet. Depend on it with a path:
+
+```yaml
+dependencies:
+  lock_screen_pin:
+    path: packages/lock_screen_pin
+```
+
 ## Usage
 
 ```dart
@@ -92,3 +102,13 @@ LockScreen(
   registered through `ThemeData.extensions`.
 - `PinLockStrings` exposes `clearButtonLabel` and `backspaceButtonLabel` in
   addition to the wrong-passcode dialog strings.
+
+## Example
+
+A runnable app that shows a four-digit PIN lock screen lives in
+[`example/`](example/).
+
+## Screenshot
+
+A screenshot for the pub.dev listing is not included yet. Run the example app
+to see the keypad and the passcode dots.
