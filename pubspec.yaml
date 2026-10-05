@@ -3,8 +3,8 @@ description: >-
   A customizable PIN/passcode lock screen with keypad, code dots, optional
   biometrics entry, and themeable colors and strings.
 version: 0.1.0
-repository: https://github.com/M1chlCZ/Rocketbot-App-New/tree/main/packages/lock_screen_pin
-issue_tracker: https://github.com/M1chlCZ/Rocketbot-App-New/issues
+repository: https://github.com/M1chlCZ/lock_screen_pin
+issue_tracker: https://github.com/M1chlCZ/lock_screen_pin/issues
 topics:
   - widget
   - pin
