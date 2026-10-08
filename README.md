@@ -1,26 +1,21 @@
 # lock_screen_pin
 
-A customizable PIN/passcode lock screen for Flutter. It provides a numeric
-keypad, passcode dots, wrong-passcode feedback, optional biometrics hooks, and
-themeable colors and strings.
+A customizable PIN lock screen for Flutter. It gives you a numeric keypad,
+PIN dots, wrong-PIN feedback, and optional biometric hooks.
 
 ## Features
 
 - Numeric keypad with clear and backspace keys
-- Passcode dots with accepted and rejected status colors
-- Wrong-passcode handling with a configurable dialog
+- PIN dots with accepted and rejected colors
+- Wrong-PIN dialog with configurable text
 - Biometric entry hooks: fingerprint area and automatic success
-- Theming through `PinLockTheme`, including registration as a `ThemeExtension`
-- Configurable strings through `PinLockStrings`
+- Theming with `PinLockTheme`, also as a `ThemeExtension`
+- Localizable labels with `PinLockStrings`
 
 ## Install
 
-`lock_screen_pin` is not published on pub.dev yet. Depend on it with a path:
-
-```yaml
-dependencies:
-  lock_screen_pin:
-    path: packages/lock_screen_pin
+```bash
+flutter pub add lock_screen_pin
 ```
 
 ## Usage
@@ -28,8 +23,6 @@ dependencies:
 ```dart
 import 'package:flutter/material.dart';
 import 'package:lock_screen_pin/lock_screen_pin.dart';
-
-void main() => runApp(const MaterialApp(home: PinPage()));
 
 class PinPage extends StatelessWidget {
   const PinPage({super.key});
@@ -39,16 +32,6 @@ class PinPage extends StatelessWidget {
     return LockScreen(
       title: 'Enter your PIN',
       passLength: 4,
-      styles: const PinLockTheme(
-        numberColor: Colors.white70,
-        dotBorderColor: Colors.white,
-      ),
-      strings: const PinLockStrings(
-        wrongPassTitle: 'Oops!',
-        wrongPassContent: 'The passcode you entered is incorrect.',
-        wrongPassCancelButtonText: 'Cancel',
-      ),
-      showWrongPassDialog: true,
       passCodeVerify: (code) async => code.join() == '1234',
       onSuccess: () {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -60,55 +43,30 @@ class PinPage extends StatelessWidget {
 }
 ```
 
+Set `showWrongPassDialog` to `true` to show the wrong-PIN dialog. Pass
+`PinLockStrings` to `strings` to change its text.
+
 ## Biometrics
 
-Biometric verification is app-provided. The package never shows a biometric
-prompt itself.
+The app verifies biometric data. The package never shows a biometric prompt.
 
-Keep `fingerVerify` set to `false` and run your own biometric prompt (for
-example with `local_auth`). Set `fingerVerify: true` only after your prompt
-returns success. The lock screen then calls `onSuccess` automatically, either
-when `fingerVerify` changes from `false` to `true` or in `initState` when it is
-already `true`.
+Keep `fingerVerify` at `false` and run your own prompt, for example with
+`local_auth`. Set `fingerVerify` to `true` only after the prompt succeeds. The
+lock screen then calls `onSuccess`. To show a tappable fingerprint area, set
+`showFingerPass` to `true` and provide `fingerPrintImage`. A tap calls
+`fingerFunction`, where you start your prompt.
 
-To show a tappable fingerprint area, set `showFingerPass: true` and provide
-`fingerPrintImage`. Tapping the area calls `fingerFunction`, which is typically
-where you start your biometric prompt:
+> **Warning:** If you set `fingerVerify` to `true` before your prompt succeeds,
+> the lock screen calls `onSuccess` immediately and skips the PIN.
 
-```dart
-var fingerVerified = false;
+## Configuration
 
-LockScreen(
-  // ...
-  showFingerPass: true,
-  fingerPrintImage: const Icon(Icons.fingerprint),
-  fingerVerify: fingerVerified,
-  fingerFunction: () async {
-    if (await runYourBiometricPrompt()) {
-      setState(() => fingerVerified = true);
-    }
-  },
-);
-```
-
-> **Warning:** Setting `fingerVerify: true` unconditionally, or before your own
-> prompt succeeds, bypasses the PIN and calls `onSuccess` immediately.
-
-## Configuration notes
-
-- `passLength` accepts values from 1 to 8. Values outside that range fail an
-  assertion.
-- `styles` passed to `LockScreen` takes precedence over a `PinLockTheme`
-  registered through `ThemeData.extensions`.
-- `PinLockStrings` exposes `clearButtonLabel` and `backspaceButtonLabel` in
-  addition to the wrong-passcode dialog strings.
+- `passLength` accepts values from 1 to 8. Other values fail an assertion.
+- `styles` on `LockScreen` takes precedence over a `PinLockTheme` in
+  `ThemeData.extensions`.
+- `PinLockStrings` sets the labels for the clear key, the backspace key, and
+  the wrong-PIN dialog.
 
 ## Example
 
-A runnable app that shows a four-digit PIN lock screen lives in
-[`example/`](example/).
-
-## Screenshot
-
-A screenshot for the pub.dev listing is not included yet. Run the example app
-to see the keypad and the passcode dots.
+The [`example/`](example/) app shows a four-digit PIN lock screen.

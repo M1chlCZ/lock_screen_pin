@@ -1,3 +1,8 @@
+## 0.1.1
+
+- Rewrite the README. The install section now uses
+  `flutter pub add lock_screen_pin`.
+
 ## 0.1.0
 
 - Initial release.
