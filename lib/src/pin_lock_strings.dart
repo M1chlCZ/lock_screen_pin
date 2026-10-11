@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// Text strings displayed by the lock screen package.
+/// Text strings the lock screen uses.
 @immutable
 class PinLockStrings {
   /// Creates a set of lock screen strings.
@@ -12,10 +12,10 @@ class PinLockStrings {
     this.backspaceButtonLabel = 'Backspace',
   });
 
-  /// Title shown at the top of the wrong passcode dialog.
+  /// Title that the wrong passcode dialog shows at the top.
   final String wrongPassTitle;
 
-  /// Message shown inside the wrong passcode dialog.
+  /// Message that the wrong passcode dialog shows.
   final String wrongPassContent;
 
   /// Label of the button that dismisses the wrong passcode dialog.

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Theme values used by the lock screen widget.
+/// Theme values that the lock screen widget uses.
 ///
 /// Register a [PinLockTheme] with [ThemeData.extensions] or pass one directly
 /// to the lock screen. Every value is optional; a missing value falls back to
@@ -72,10 +72,10 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
   /// When null the widget falls back to [ThemeData.canvasColor].
   Color? get keyColor => _keyColor;
 
-  /// Shadows painted behind every keypad key.
+  /// Shadows behind every keypad key.
   ///
-  /// Defaults to two soft shadows that give the keys a raised look. A list
-  /// supplied by the caller is exposed as an unmodifiable copy.
+  /// Defaults to two soft shadows that give the keys a raised look. The getter
+  /// exposes a caller-supplied list as an unmodifiable copy.
   List<BoxShadow> get keyShadows => _keyShadows == null
       ? _defaultKeyShadows
       : List<BoxShadow>.unmodifiable(_keyShadows);

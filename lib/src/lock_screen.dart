@@ -5,18 +5,18 @@ import 'package:flutter/material.dart';
 import 'pin_lock_strings.dart';
 import 'pin_lock_theme.dart';
 
-/// Verifies an entered passcode and reports whether it is accepted.
+/// Verifies an entered passcode and reports the result.
 typedef PassCodeVerify = Future<bool> Function(List<int> passcode);
 
-/// Verification status shown by [CodePanel].
+/// Verification status that [CodePanel] displays.
 enum CodePanelStatus {
-  /// No verification result has been reported yet.
+  /// The lock screen has not verified a passcode yet.
   idle,
 
-  /// The last entered passcode was accepted.
+  /// The lock screen accepted the last passcode.
   accepted,
 
-  /// The last entered passcode was rejected.
+  /// The lock screen rejected the last passcode.
   rejected,
 }
 
@@ -39,10 +39,10 @@ class LockScreen extends StatefulWidget {
   }) : assert(passLength > 0),
        assert(passLength <= 8);
 
-  /// Called when the entered passcode is accepted.
+  /// The lock screen calls this callback when it accepts the passcode.
   final VoidCallback onSuccess;
 
-  /// Title displayed above the passcode dots.
+  /// Title that the lock screen shows above the passcode dots.
   final String title;
 
   /// Number of digits in the passcode. Must be between 1 and 8.
@@ -51,7 +51,8 @@ class LockScreen extends StatefulWidget {
   /// Verifies the entered passcode.
   final PassCodeVerify passCodeVerify;
 
-  /// Called when the fingerprint entry is used.
+  /// The lock screen calls this function when the user taps the fingerprint
+  /// area.
   final VoidCallback? fingerFunction;
 
   /// Whether fingerprint verification is active.
@@ -60,13 +61,13 @@ class LockScreen extends StatefulWidget {
   /// Whether to show the fingerprint area.
   final bool showFingerPass;
 
-  /// Image shown inside the fingerprint area.
+  /// Image that the lock screen shows inside the fingerprint area.
   final Widget? fingerPrintImage;
 
   /// Whether to show a dialog after a wrong passcode.
   final bool showWrongPassDialog;
 
-  /// Text used by the lock screen.
+  /// Text strings the lock screen uses.
   final PinLockStrings strings;
 
   /// Theme values for the lock screen.
@@ -329,107 +330,94 @@ class LockScreenState extends State<LockScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: <Widget>[
-          Container(
-            color: backgroundColor,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Expanded(
-                  flex: 4,
-                  child: Stack(
-                    children: <Widget>[
-                      Container(
-                        height: MediaQuery.of(context).size.height,
-                        width: MediaQuery.of(context).size.width,
-                        decoration: BoxDecoration(color: backgroundColor),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: <Widget>[
-                            const SizedBox(height: 100),
-                            Text(widget.title, style: titleStyle),
-                            SizedBox(
-                              height:
-                                  Theme.of(context).platform ==
-                                      TargetPlatform.iOS
-                                  ? 20
-                                  : 30,
-                            ),
-                            CodePanel(
-                              codeLength: widget.passLength,
-                              currentLength: _currentCodeLength,
-                              dotBorderColor: styles.dotBorderColor,
-                              dotFillColor: styles.dotFillColor,
-                              fingerVerify: widget.fingerVerify,
-                              status: _currentState,
-                            ),
-                          ],
+      body: Container(
+        color: backgroundColor,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Expanded(
+              flex: 4,
+              child: Stack(
+                children: <Widget>[
+                  Container(
+                    height: MediaQuery.of(context).size.height,
+                    width: MediaQuery.of(context).size.width,
+                    decoration: BoxDecoration(color: backgroundColor),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: <Widget>[
+                        const SizedBox(height: 100),
+                        Text(widget.title, style: titleStyle),
+                        SizedBox(
+                          height:
+                              Theme.of(context).platform == TargetPlatform.iOS
+                              ? 20
+                              : 30,
+                        ),
+                        CodePanel(
+                          codeLength: widget.passLength,
+                          currentLength: _currentCodeLength,
+                          dotBorderColor: styles.dotBorderColor,
+                          dotFillColor: styles.dotFillColor,
+                          fingerVerify: widget.fingerVerify,
+                          status: _currentState,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (widget.showFingerPass)
+                    Positioned(
+                      top: 10,
+                      right: 15,
+                      child: GestureDetector(
+                        onTap: () => widget.fingerFunction?.call(),
+                        child: SizedBox(
+                          width: 60,
+                          child: widget.fingerPrintImage,
                         ),
                       ),
-                      if (widget.showFingerPass)
-                        Positioned(
-                          top: 10,
-                          right: 15,
-                          child: GestureDetector(
-                            onTap: () => widget.fingerFunction?.call(),
-                            child: SizedBox(
-                              width: 60,
-                              child: widget.fingerPrintImage,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  flex: Theme.of(context).platform == TargetPlatform.iOS
-                      ? 10
-                      : 8,
-                  child: Container(
-                    padding: const EdgeInsets.only(left: 0, top: 0),
-                    child:
-                        NotificationListener<OverscrollIndicatorNotification>(
-                          onNotification: (overscroll) {
-                            overscroll.disallowIndicator();
-                            return true;
-                          },
-                          child: GridView.count(
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisCount: 3,
-                            childAspectRatio: 1.0,
-                            mainAxisSpacing: 0,
-                            padding: const EdgeInsets.all(20),
-                            children: <Widget>[
-                              _buildNumberKey(1, styles),
-                              _buildNumberKey(2, styles),
-                              _buildNumberKey(3, styles),
-                              _buildNumberKey(4, styles),
-                              _buildNumberKey(5, styles),
-                              _buildNumberKey(6, styles),
-                              _buildNumberKey(7, styles),
-                              _buildNumberKey(8, styles),
-                              _buildNumberKey(9, styles),
-                              _buildClearKey(styles),
-                              _buildNumberKey(0, styles),
-                              _buildBackspaceKey(styles),
-                            ],
-                          ),
-                        ),
-                  ),
-                ),
-              ],
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+            Expanded(
+              flex: Theme.of(context).platform == TargetPlatform.iOS ? 10 : 8,
+              child: NotificationListener<OverscrollIndicatorNotification>(
+                onNotification: (overscroll) {
+                  overscroll.disallowIndicator();
+                  return true;
+                },
+                child: GridView.count(
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 3,
+                  padding: const EdgeInsets.all(20),
+                  children: <Widget>[
+                    _buildNumberKey(1, styles),
+                    _buildNumberKey(2, styles),
+                    _buildNumberKey(3, styles),
+                    _buildNumberKey(4, styles),
+                    _buildNumberKey(5, styles),
+                    _buildNumberKey(6, styles),
+                    _buildNumberKey(7, styles),
+                    _buildNumberKey(8, styles),
+                    _buildNumberKey(9, styles),
+                    _buildClearKey(styles),
+                    _buildNumberKey(0, styles),
+                    _buildBackspaceKey(styles),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// A row of dots that visualizes how many passcode digits were entered.
+/// A row of dots that shows how many passcode digits the user entered.
 class CodePanel extends StatelessWidget {
   /// Creates a passcode dot panel.
   const CodePanel({
@@ -447,7 +435,7 @@ class CodePanel extends StatelessWidget {
   /// Total number of dots to display.
   final int codeLength;
 
-  /// Number of dots that should appear filled.
+  /// Number of dots the panel fills.
   final int currentLength;
 
   /// Border color of the dots.
@@ -546,7 +534,7 @@ class CodePanel extends StatelessWidget {
   }
 }
 
-/// Clips a rectangle into the slanted shape used by lock screen backgrounds.
+/// Clips a rectangle into the slanted shape of lock screen backgrounds.
 class BgClipper extends CustomClipper<Path> {
   /// Creates a background clipper.
   const BgClipper();
