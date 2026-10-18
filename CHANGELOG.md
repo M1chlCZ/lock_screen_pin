@@ -1,3 +1,12 @@
+## [0.2.0] - 2026-10-18
+
+- Attempt lockout with `maxAttempts`, `lockoutDuration`, `onLockoutStart`,
+  `onLockoutEnd`, `remainingAttempts`, and `isLockedOut`.
+- PIN codec hook with `PinCodec`, `IdentityPinCodec`, and `expectedCode`.
+  `passCodeVerify` is now optional.
+- Haptic feedback on entry results with `hapticsEnabled`.
+- Accessibility labels on the keypad keys and the code panel.
+
 ## 0.1.2
 
 - Documentation and internal cleanup.

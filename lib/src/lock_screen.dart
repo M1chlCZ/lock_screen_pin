@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import 'pin_codec.dart';
 import 'pin_lock_strings.dart';
 import 'pin_lock_theme.dart';
 
@@ -21,14 +23,27 @@ enum CodePanelStatus {
 }
 
 /// A PIN/passcode lock screen with a numeric keypad and passcode dots.
+///
+/// The screen supports attempt lockout, a PIN codec hook, haptic feedback,
+/// and accessibility labels.
 class LockScreen extends StatefulWidget {
   /// Creates a lock screen.
+  ///
+  /// Provide [passCodeVerify] or [expectedCode]. Both paths verify the entered
+  /// passcode; [passCodeVerify] wins when both are set.
   const LockScreen({
     super.key,
     required this.onSuccess,
     required this.title,
     required this.passLength,
-    required this.passCodeVerify,
+    this.passCodeVerify,
+    this.expectedCode,
+    this.codec = const IdentityPinCodec(),
+    this.maxAttempts,
+    this.lockoutDuration,
+    this.onLockoutStart,
+    this.onLockoutEnd,
+    this.hapticsEnabled = true,
     this.fingerFunction,
     this.fingerVerify = false,
     this.showFingerPass = false,
@@ -37,7 +52,10 @@ class LockScreen extends StatefulWidget {
     this.strings = const PinLockStrings(),
     this.styles,
   }) : assert(passLength > 0),
-       assert(passLength <= 8);
+       assert(passLength <= 8),
+       assert(maxAttempts == null || maxAttempts > 0),
+       assert(lockoutDuration == null || lockoutDuration > Duration.zero),
+       assert(passCodeVerify != null || expectedCode != null);
 
   /// The lock screen calls this callback when it accepts the passcode.
   final VoidCallback onSuccess;
@@ -49,7 +67,47 @@ class LockScreen extends StatefulWidget {
   final int passLength;
 
   /// Verifies the entered passcode.
-  final PassCodeVerify passCodeVerify;
+  ///
+  /// When null the lock screen verifies the passcode with [codec] and
+  /// [expectedCode]. This callback wins over [expectedCode] when both are set.
+  final PassCodeVerify? passCodeVerify;
+
+  /// Stored passcode that the lock screen compares against.
+  ///
+  /// The lock screen stores this value and checks the entered passcode with
+  /// [codec]. The value can hold a hash of the real passcode. Provide
+  /// [passCodeVerify] instead when the app keeps the passcode outside the
+  /// widget.
+  final String? expectedCode;
+
+  /// Codec that checks the entered passcode against [expectedCode].
+  ///
+  /// Defaults to [IdentityPinCodec], which compares plain text.
+  final PinCodec codec;
+
+  /// Number of wrong entries that start a lockout.
+  ///
+  /// When null the lock screen never locks out. The value must be greater
+  /// than zero. A correct entry resets the count of wrong entries.
+  final int? maxAttempts;
+
+  /// Time the keypad stays disabled after a lockout.
+  ///
+  /// Defaults to 30 seconds. The lock screen ignores this value when
+  /// [maxAttempts] is null.
+  final Duration? lockoutDuration;
+
+  /// Callback that the lock screen calls once when a lockout starts.
+  final VoidCallback? onLockoutStart;
+
+  /// Callback that the lock screen calls once when a lockout ends.
+  final VoidCallback? onLockoutEnd;
+
+  /// Whether the lock screen fires haptic feedback on entry results.
+  ///
+  /// Defaults to `true`. The screen fires a light impact on success and a
+  /// heavy impact on a wrong entry. Biometric success fires no haptics.
+  final bool hapticsEnabled;
 
   /// The lock screen calls this function when the user taps the fingerprint
   /// area.
@@ -82,8 +140,27 @@ class LockScreenState extends State<LockScreen> {
   var _currentCodeLength = 0;
   final _inputCodes = <int>[];
   var _currentState = CodePanelStatus.idle;
+  var _failedAttempts = 0;
+  var _isLockedOut = false;
   Timer? _resetTimer;
   Timer? _fingerTimer;
+  Timer? _lockoutTimer;
+
+  /// Number of wrong entries left before the keypad locks out.
+  ///
+  /// Returns `null` when [LockScreen.maxAttempts] is null. The getter returns
+  /// zero while the keypad is locked out. A correct entry resets the count.
+  int? get remainingAttempts {
+    final maxAttempts = widget.maxAttempts;
+    if (maxAttempts == null) {
+      return null;
+    }
+    final remaining = maxAttempts - _failedAttempts;
+    return remaining < 0 ? 0 : remaining;
+  }
+
+  /// Whether the keypad is locked out after too many wrong entries.
+  bool get isLockedOut => _isLockedOut;
 
   @override
   void initState() {
@@ -107,6 +184,7 @@ class LockScreenState extends State<LockScreen> {
   void dispose() {
     _resetTimer?.cancel();
     _fingerTimer?.cancel();
+    _lockoutTimer?.cancel();
     _inputCodes.clear();
     super.dispose();
   }
@@ -127,6 +205,9 @@ class LockScreenState extends State<LockScreen> {
   }
 
   void _onCodeClick(int code) {
+    if (_isLockedOut) {
+      return;
+    }
     if (_currentCodeLength < widget.passLength) {
       setState(() {
         _currentCodeLength++;
@@ -142,7 +223,12 @@ class LockScreenState extends State<LockScreen> {
     final passcode = List<int>.of(_inputCodes);
     var isAccepted = false;
     try {
-      isAccepted = await widget.passCodeVerify(passcode);
+      final verify = widget.passCodeVerify;
+      if (verify != null) {
+        isAccepted = await verify(passcode);
+      } else {
+        isAccepted = widget.codec.verify(passcode.join(), widget.expectedCode!);
+      }
     } catch (_) {
       isAccepted = false;
     }
@@ -151,6 +237,10 @@ class LockScreenState extends State<LockScreen> {
     }
     if (isAccepted) {
       _fingerTimer?.cancel();
+      _failedAttempts = 0;
+      if (widget.hapticsEnabled) {
+        HapticFeedback.lightImpact();
+      }
       setState(() {
         _currentState = CodePanelStatus.accepted;
         _inputCodes.clear();
@@ -162,14 +252,50 @@ class LockScreenState extends State<LockScreen> {
   }
 
   void _handleWrongPassCode() {
-    setState(() {
-      _currentState = CodePanelStatus.rejected;
-    });
-    _resetTimer?.cancel();
-    _resetTimer = Timer(const Duration(milliseconds: 1000), _resetCodes);
+    if (widget.hapticsEnabled) {
+      HapticFeedback.heavyImpact();
+    }
+    _failedAttempts++;
+    final maxAttempts = widget.maxAttempts;
+    if (maxAttempts != null && _failedAttempts >= maxAttempts) {
+      _startLockout();
+    } else {
+      setState(() {
+        _currentState = CodePanelStatus.rejected;
+      });
+      _resetTimer?.cancel();
+      _resetTimer = Timer(const Duration(milliseconds: 1000), _resetCodes);
+    }
     if (widget.showWrongPassDialog) {
       _showWrongPassDialog();
     }
+  }
+
+  void _startLockout() {
+    _isLockedOut = true;
+    _resetTimer?.cancel();
+    _lockoutTimer?.cancel();
+    setState(() {
+      _currentState = CodePanelStatus.idle;
+      _currentCodeLength = 0;
+      _inputCodes.clear();
+    });
+    widget.onLockoutStart?.call();
+    _lockoutTimer = Timer(
+      widget.lockoutDuration ?? const Duration(seconds: 30),
+      _endLockout,
+    );
+  }
+
+  void _endLockout() {
+    if (!mounted) {
+      return;
+    }
+    _failedAttempts = 0;
+    setState(() {
+      _isLockedOut = false;
+    });
+    widget.onLockoutEnd?.call();
   }
 
   void _resetCodes() {
@@ -184,6 +310,9 @@ class LockScreenState extends State<LockScreen> {
   }
 
   void _deleteCode() {
+    if (_isLockedOut) {
+      return;
+    }
     setState(() {
       if (_currentCodeLength > 0) {
         _currentState = CodePanelStatus.idle;
@@ -194,6 +323,9 @@ class LockScreenState extends State<LockScreen> {
   }
 
   void _deleteAllCodes() {
+    if (_isLockedOut) {
+      return;
+    }
     setState(() {
       if (_currentCodeLength > 0) {
         _currentState = CodePanelStatus.idle;
@@ -276,7 +408,7 @@ class LockScreenState extends State<LockScreen> {
     return _buildKey(
       styles: styles,
       onTap: () => _onCodeClick(number),
-      semanticsLabel: number.toString(),
+      semanticsLabel: 'Digit $number',
       child: Text(
         number.toString(),
         style: (textTheme.headlineMedium ?? const TextStyle()).copyWith(
@@ -516,19 +648,23 @@ class CodePanel extends StatelessWidget {
       }
     }
 
-    return SizedBox.fromSize(
-      size: Size(MediaQuery.of(context).size.width, 30),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          SizedBox.fromSize(
-            size: Size(40.0 * codeLength, dotSize),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: circles,
+    return Semantics(
+      container: true,
+      label: 'PIN entry, $currentLength of $codeLength digits entered',
+      child: SizedBox.fromSize(
+        size: Size(MediaQuery.of(context).size.width, 30),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            SizedBox.fromSize(
+              size: Size(40.0 * codeLength, dotSize),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: circles,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
