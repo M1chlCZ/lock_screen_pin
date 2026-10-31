@@ -1,18 +1,18 @@
 # lock_screen_pin
 
-A customizable PIN lock screen for Flutter. It gives you a numeric keypad,
-PIN dots, wrong-PIN feedback, and optional biometric hooks.
+A customisable PIN lock screen for Flutter. It gives you a numeric keypad, PIN
+dots, wrong-PIN feedback and optional biometric hooks.
 
 ## Features
 
 - Numeric keypad with clear and backspace keys
-- PIN dots with accepted and rejected colors
+- PIN dots with accepted and rejected colours
 - Wrong-PIN dialog with configurable text
 - Biometric entry hooks: fingerprint area and automatic success
 - Attempt lockout with `maxAttempts` and `lockoutDuration`
 - PIN codec hook: keep only a hash with `PinCodec` and `expectedCode`
 - Haptic feedback on accepted and rejected entries
-- Themed PIN dots with size, spacing, and border width
+- Themed PIN dots with size, spacing and border width
 - Shake animation on a wrong PIN that respects reduced motion
 - Accessibility labels on the keypad keys and the PIN dots
 - Theming with `PinLockTheme`, also as a `ThemeExtension`
@@ -54,7 +54,8 @@ Set `showWrongPassDialog` to `true` to show the wrong-PIN dialog. Pass
 
 ## Biometrics
 
-The app verifies biometric data. The package never shows a biometric prompt.
+Your app handles the biometric check. The package never shows a prompt of its
+own.
 
 Keep `fingerVerify` at `false` and run your own prompt, for example with
 `local_auth`. Set `fingerVerify` to `true` only after the prompt succeeds. The
@@ -67,10 +68,10 @@ lock screen then calls `onSuccess`. To show a tappable fingerprint area, set
 
 ## Lockout
 
-Set `maxAttempts` to limit the number of wrong entries. After the limit the
-keypad disables for `lockoutDuration`, the dots reset, and `onLockoutStart`
-fires once. The keypad enables again after the duration and `onLockoutEnd`
-fires once. A correct entry resets the attempt counter.
+Set `maxAttempts` to cap wrong entries. Once the limit is reached, the keypad
+disables for `lockoutDuration`, the dots reset and `onLockoutStart` fires once.
+The keypad comes back when the duration ends and `onLockoutEnd` fires once. A
+correct entry resets the attempt counter.
 
 ```dart
 LockScreen(
@@ -85,9 +86,9 @@ LockScreen(
 );
 ```
 
-`lockoutDuration` defaults to 30 seconds. When `maxAttempts` is null, the
-lock screen never locks out. Read `remainingAttempts` and `isLockedOut` from
-a `GlobalKey<LockScreenState>`:
+`lockoutDuration` defaults to 30 seconds. With `maxAttempts` set to null, the
+lock screen never locks out. Read `remainingAttempts` and `isLockedOut` from a
+`GlobalKey<LockScreenState>`:
 
 ```dart
 final lockScreenKey = GlobalKey<LockScreenState>();
@@ -107,8 +108,8 @@ final locked = lockScreenKey.currentState?.isLockedOut ?? false;
 
 ## PIN codec
 
-Store only a hash of the PIN code with `expectedCode` and `codec`. The
-`IdentityPinCodec` default compares the stored value as plain text.
+Store only a hash of the PIN with `expectedCode` and `codec`. The default
+`IdentityPinCodec` compares the stored value as plain text.
 
 ```dart
 LockScreen(
@@ -135,14 +136,14 @@ class ReversedPinCodec implements PinCodec {
 ```
 
 The widget calls `verify` with the entered digits and the stored value. When
-both `passCodeVerify` and `expectedCode` are set, `passCodeVerify` wins. One
-of the two is required.
+both `passCodeVerify` and `expectedCode` are set, `passCodeVerify` wins. One of
+the two is required.
 
 ## Haptics
 
 `hapticsEnabled` defaults to `true`. The lock screen fires a light impact on
 success and a heavy impact on a wrong entry. Biometric success fires no
-haptics. Set `hapticsEnabled` to `false` to disable haptics.
+haptics. Set `hapticsEnabled` to `false` to turn them off.
 
 ## Styling
 
@@ -178,9 +179,9 @@ The screen skips the shake when the platform asks for reduced motion.
 
 ## Accessibility
 
-The keypad keys announce labels such as "Digit 5". The code panel announces
-the entered digit count, for example "PIN entry, 3 of 6 digits entered". The
-clear and backspace labels come from `PinLockStrings`.
+The keypad keys announce labels such as "Digit 5". The code panel announces the
+entered digit count, for example "PIN entry, 3 of 6 digits entered". The clear
+and backspace labels come from `PinLockStrings`.
 
 ## Configuration
 
@@ -190,13 +191,13 @@ clear and backspace labels come from `PinLockStrings`.
 - `maxAttempts` sets the wrong-entry limit; `lockoutDuration` defaults to 30
   seconds.
 - `hapticsEnabled` defaults to `true`.
-- `shakeEnabled` (default `true`), `shakeDuration` (default 300 ms), and
+- `shakeEnabled` (default `true`), `shakeDuration` (default 300 ms) and
   `shakeOffset` (default 10) control the wrong-PIN shake.
-- `PinLockTheme` sets `dotSize` (25), `dotSpacing` (15), and `dotBorderWidth`
+- `PinLockTheme` sets `dotSize` (25), `dotSpacing` (15) and `dotBorderWidth`
   (2) for the PIN dots.
 - `styles` on `LockScreen` takes precedence over a `PinLockTheme` in
   `ThemeData.extensions`.
-- `PinLockStrings` sets the labels for the clear key, the backspace key, and
+- `PinLockStrings` sets the labels for the clear key, the backspace key and
   the wrong-PIN dialog.
 
 ## Example
