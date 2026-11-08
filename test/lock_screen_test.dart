@@ -23,12 +23,20 @@ void main() {
     PinLockTheme? styles,
     PinLockStrings strings = const PinLockStrings(),
     GlobalKey<LockScreenState>? stateKey,
+    bool shakeEnabled = true,
+    bool reduceMotion = false,
   }) {
     tester.view.physicalSize = const Size(700, 1600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     return tester.pumpWidget(
       MaterialApp(
+        builder: reduceMotion
+            ? (context, child) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(disableAnimations: true),
+                child: child!,
+              )
+            : null,
         home: LockScreen(
           key: stateKey,
           title: 'Enter passcode',
@@ -48,6 +56,7 @@ void main() {
           fingerPrintImage: fingerPrintImage,
           styles: styles,
           strings: strings,
+          shakeEnabled: shakeEnabled,
         ),
       ),
     );
@@ -984,6 +993,62 @@ void main() {
 
       semantics.dispose();
     });
+  });
+  testWidgets('shakes the dots after a wrong passcode', (tester) async {
+    await pumpLockScreen(tester, verify: (_) async => false);
+
+    await enterDigits(tester, '1234');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+
+    expect(
+      tester.widget<CodePanel>(find.byType(CodePanel)).shakeOffset,
+      isNot(0),
+    );
+
+    await tester.pumpAndSettle();
+    expect(tester.widget<CodePanel>(find.byType(CodePanel)).shakeOffset, 0);
+  });
+
+  testWidgets('skips the shake when shakeEnabled is false', (tester) async {
+    await pumpLockScreen(
+      tester,
+      verify: (_) async => false,
+      shakeEnabled: false,
+    );
+
+    await enterDigits(tester, '1234');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+
+    expect(tester.widget<CodePanel>(find.byType(CodePanel)).shakeOffset, 0);
+  });
+
+  testWidgets('skips the shake with reduced motion', (tester) async {
+    await pumpLockScreen(
+      tester,
+      verify: (_) async => false,
+      reduceMotion: true,
+    );
+
+    await enterDigits(tester, '1234');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+
+    expect(tester.widget<CodePanel>(find.byType(CodePanel)).shakeOffset, 0);
+  });
+
+  testWidgets('applies the dot theme to the panel', (tester) async {
+    await pumpLockScreen(
+      tester,
+      verify: (_) async => false,
+      styles: const PinLockTheme(dotSize: 18, dotSpacing: 9, dotBorderWidth: 2),
+    );
+
+    final panel = tester.widget<CodePanel>(find.byType(CodePanel));
+    expect(panel.dotSize, 18);
+    expect(panel.dotSpacing, 9);
+    expect(panel.dotBorderWidth, 2);
   });
 }
 

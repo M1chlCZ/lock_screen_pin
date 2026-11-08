@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -51,10 +52,15 @@ class LockScreen extends StatefulWidget {
     this.showWrongPassDialog = false,
     this.strings = const PinLockStrings(),
     this.styles,
+    this.shakeEnabled = true,
+    this.shakeDuration = const Duration(milliseconds: 300),
+    this.shakeOffset = 10,
   }) : assert(passLength > 0),
        assert(passLength <= 8),
        assert(maxAttempts == null || maxAttempts > 0),
        assert(lockoutDuration == null || lockoutDuration > Duration.zero),
+       assert(shakeDuration > Duration.zero),
+       assert(shakeOffset >= 0),
        assert(passCodeVerify != null || expectedCode != null);
 
   /// The lock screen calls this callback when it accepts the passcode.
@@ -131,17 +137,31 @@ class LockScreen extends StatefulWidget {
   /// Theme values for the lock screen.
   final PinLockTheme? styles;
 
+  /// Whether a wrong passcode shakes the passcode dots.
+  ///
+  /// Defaults to `true`. The screen also skips the shake when the platform
+  /// asks for reduced motion.
+  final bool shakeEnabled;
+
+  /// Duration of the wrong passcode shake.
+  final Duration shakeDuration;
+
+  /// Maximum horizontal offset of the wrong passcode shake, in logical pixels.
+  final double shakeOffset;
+
   @override
   LockScreenState createState() => LockScreenState();
 }
 
 /// State for [LockScreen].
-class LockScreenState extends State<LockScreen> {
+class LockScreenState extends State<LockScreen>
+    with SingleTickerProviderStateMixin {
   var _currentCodeLength = 0;
   final _inputCodes = <int>[];
   var _currentState = CodePanelStatus.idle;
   var _failedAttempts = 0;
   var _isLockedOut = false;
+  late final AnimationController _shakeController;
   Timer? _resetTimer;
   Timer? _fingerTimer;
   Timer? _lockoutTimer;
@@ -165,6 +185,10 @@ class LockScreenState extends State<LockScreen> {
   @override
   void initState() {
     super.initState();
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: widget.shakeDuration,
+    );
     if (widget.fingerVerify) {
       _scheduleFingerSuccess();
     }
@@ -173,6 +197,7 @@ class LockScreenState extends State<LockScreen> {
   @override
   void didUpdateWidget(LockScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _shakeController.duration = widget.shakeDuration;
     if (widget.fingerVerify && !oldWidget.fingerVerify) {
       _scheduleFingerSuccess();
     } else if (!widget.fingerVerify && oldWidget.fingerVerify) {
@@ -182,6 +207,7 @@ class LockScreenState extends State<LockScreen> {
 
   @override
   void dispose() {
+    _shakeController.dispose();
     _resetTimer?.cancel();
     _fingerTimer?.cancel();
     _lockoutTimer?.cancel();
@@ -263,12 +289,23 @@ class LockScreenState extends State<LockScreen> {
       setState(() {
         _currentState = CodePanelStatus.rejected;
       });
+      _triggerShake();
       _resetTimer?.cancel();
       _resetTimer = Timer(const Duration(milliseconds: 1000), _resetCodes);
     }
     if (widget.showWrongPassDialog) {
       _showWrongPassDialog();
     }
+  }
+
+  void _triggerShake() {
+    if (!widget.shakeEnabled) {
+      return;
+    }
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      return;
+    }
+    _shakeController.forward(from: 0);
   }
 
   void _startLockout() {
@@ -488,13 +525,28 @@ class LockScreenState extends State<LockScreen> {
                               ? 20
                               : 30,
                         ),
-                        CodePanel(
-                          codeLength: widget.passLength,
-                          currentLength: _currentCodeLength,
-                          dotBorderColor: styles.dotBorderColor,
-                          dotFillColor: styles.dotFillColor,
-                          fingerVerify: widget.fingerVerify,
-                          status: _currentState,
+                        AnimatedBuilder(
+                          animation: _shakeController,
+                          builder: (context, child) {
+                            final double progress = _shakeController.value;
+                            final double offset = progress == 0
+                                ? 0
+                                : math.sin(progress * math.pi * 4) *
+                                      (1 - progress) *
+                                      widget.shakeOffset;
+                            return CodePanel(
+                              codeLength: widget.passLength,
+                              currentLength: _currentCodeLength,
+                              dotBorderColor: styles.dotBorderColor,
+                              dotFillColor: styles.dotFillColor,
+                              dotSize: styles.dotSize,
+                              dotSpacing: styles.dotSpacing,
+                              dotBorderWidth: styles.dotBorderWidth,
+                              shakeOffset: offset,
+                              fingerVerify: widget.fingerVerify,
+                              status: _currentState,
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -558,6 +610,10 @@ class CodePanel extends StatelessWidget {
     required this.currentLength,
     this.dotBorderColor = Colors.white,
     this.dotFillColor = Colors.transparent,
+    this.dotSize = 25,
+    this.dotSpacing = 15,
+    this.dotBorderWidth = 1,
+    this.shakeOffset = 0,
     this.fingerVerify = false,
     this.status = CodePanelStatus.idle,
   }) : assert(codeLength > 0),
@@ -575,6 +631,18 @@ class CodePanel extends StatelessWidget {
 
   /// Fill color of an empty dot.
   final Color dotFillColor;
+
+  /// Diameter of one dot.
+  final double dotSize;
+
+  /// Space between two dots.
+  final double dotSpacing;
+
+  /// Border width of one dot.
+  final double dotBorderWidth;
+
+  /// Horizontal offset applied to the row, used by the wrong passcode shake.
+  final double shakeOffset;
 
   /// Whether fingerprint verification is active.
   final bool fingerVerify;
@@ -603,7 +671,7 @@ class CodePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const dotSize = 25.0;
+    final double dotSize = this.dotSize;
     final circles = <Widget>[];
     var color = dotBorderColor;
 
@@ -652,18 +720,18 @@ class CodePanel extends StatelessWidget {
       container: true,
       label: 'PIN entry, $currentLength of $codeLength digits entered',
       child: SizedBox.fromSize(
-        size: Size(MediaQuery.of(context).size.width, 30),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            SizedBox.fromSize(
-              size: Size(40.0 * codeLength, dotSize),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: circles,
-              ),
-            ),
-          ],
+        size: Size(MediaQuery.of(context).size.width, dotSize),
+        child: Transform.translate(
+          offset: Offset(shakeOffset, 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              for (var index = 0; index < circles.length; index++) ...<Widget>[
+                if (index > 0) SizedBox(width: dotSpacing),
+                circles[index],
+              ],
+            ],
+          ),
         ),
       ),
     );

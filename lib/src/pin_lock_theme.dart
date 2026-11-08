@@ -1,3 +1,5 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -13,6 +15,9 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
     Color? numberColor,
     Color? dotBorderColor,
     Color? dotFillColor,
+    double? dotSize,
+    double? dotSpacing,
+    double? dotBorderWidth,
     Color? backgroundColor,
     Color? keyColor,
     List<BoxShadow>? keyShadows,
@@ -20,6 +25,9 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
   }) : _numberColor = numberColor,
        _dotBorderColor = dotBorderColor,
        _dotFillColor = dotFillColor,
+       _dotSize = dotSize,
+       _dotSpacing = dotSpacing,
+       _dotBorderWidth = dotBorderWidth,
        _backgroundColor = backgroundColor,
        _keyColor = keyColor,
        _keyShadows = keyShadows,
@@ -41,6 +49,9 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
   final Color? _numberColor;
   final Color? _dotBorderColor;
   final Color? _dotFillColor;
+  final double? _dotSize;
+  final double? _dotSpacing;
+  final double? _dotBorderWidth;
   final Color? _backgroundColor;
   final Color? _keyColor;
   final List<BoxShadow>? _keyShadows;
@@ -60,6 +71,21 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
   ///
   /// Defaults to [Colors.transparent].
   Color get dotFillColor => _dotFillColor ?? Colors.transparent;
+
+  /// Diameter of one passcode dot.
+  ///
+  /// Defaults to `25`.
+  double get dotSize => _dotSize ?? 25;
+
+  /// Space between two passcode dots.
+  ///
+  /// Defaults to `15`.
+  double get dotSpacing => _dotSpacing ?? 15;
+
+  /// Border width of an empty passcode dot.
+  ///
+  /// Defaults to `1`.
+  double get dotBorderWidth => _dotBorderWidth ?? 1;
 
   /// Background color of the lock screen.
   ///
@@ -96,6 +122,9 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
     Color? numberColor,
     Color? dotBorderColor,
     Color? dotFillColor,
+    double? dotSize,
+    double? dotSpacing,
+    double? dotBorderWidth,
     Color? backgroundColor,
     Color? keyColor,
     List<BoxShadow>? keyShadows,
@@ -105,6 +134,9 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
       numberColor: numberColor ?? _numberColor,
       dotBorderColor: dotBorderColor ?? _dotBorderColor,
       dotFillColor: dotFillColor ?? _dotFillColor,
+      dotSize: dotSize ?? _dotSize,
+      dotSpacing: dotSpacing ?? _dotSpacing,
+      dotBorderWidth: dotBorderWidth ?? _dotBorderWidth,
       backgroundColor: backgroundColor ?? _backgroundColor,
       keyColor: keyColor ?? _keyColor,
       keyShadows: keyShadows ?? _keyShadows,
@@ -121,6 +153,9 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
       numberColor: Color.lerp(_numberColor, other._numberColor, t),
       dotBorderColor: Color.lerp(_dotBorderColor, other._dotBorderColor, t),
       dotFillColor: Color.lerp(_dotFillColor, other._dotFillColor, t),
+      dotSize: lerpDouble(_dotSize, other._dotSize, t),
+      dotSpacing: lerpDouble(_dotSpacing, other._dotSpacing, t),
+      dotBorderWidth: lerpDouble(_dotBorderWidth, other._dotBorderWidth, t),
       backgroundColor: Color.lerp(_backgroundColor, other._backgroundColor, t),
       keyColor: Color.lerp(_keyColor, other._keyColor, t),
       keyShadows: BoxShadow.lerpList(_keyShadows, other._keyShadows, t),
@@ -135,6 +170,9 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
       ..add(ColorProperty('numberColor', _numberColor))
       ..add(ColorProperty('dotBorderColor', _dotBorderColor))
       ..add(ColorProperty('dotFillColor', _dotFillColor))
+      ..add(DoubleProperty('dotSize', _dotSize))
+      ..add(DoubleProperty('dotSpacing', _dotSpacing))
+      ..add(DoubleProperty('dotBorderWidth', _dotBorderWidth))
       ..add(ColorProperty('backgroundColor', _backgroundColor))
       ..add(ColorProperty('keyColor', _keyColor))
       ..add(
@@ -162,6 +200,9 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
         other._numberColor == _numberColor &&
         other._dotBorderColor == _dotBorderColor &&
         other._dotFillColor == _dotFillColor &&
+        other._dotSize == _dotSize &&
+        other._dotSpacing == _dotSpacing &&
+        other._dotBorderWidth == _dotBorderWidth &&
         other._backgroundColor == _backgroundColor &&
         other._keyColor == _keyColor &&
         listEquals(other._keyShadows, _keyShadows) &&
@@ -173,6 +214,9 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
     _numberColor,
     _dotBorderColor,
     _dotFillColor,
+    _dotSize,
+    _dotSpacing,
+    _dotBorderWidth,
     _backgroundColor,
     _keyColor,
     _keyShadows == null ? null : Object.hashAll(_keyShadows),
