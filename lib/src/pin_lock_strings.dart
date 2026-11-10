@@ -10,6 +10,7 @@ class PinLockStrings {
     this.wrongPassCancelButtonText = 'OK',
     this.clearButtonLabel = 'Clear',
     this.backspaceButtonLabel = 'Backspace',
+    this.forgotPinLabel = 'Forgot PIN?',
   });
 
   /// Title that the wrong passcode dialog shows at the top.
@@ -26,4 +27,7 @@ class PinLockStrings {
 
   /// Accessibility label of the keypad key that deletes the last digit.
   final String backspaceButtonLabel;
+
+  /// Label of the button that starts the PIN recovery flow.
+  final String forgotPinLabel;
 }

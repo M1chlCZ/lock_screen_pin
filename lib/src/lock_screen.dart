@@ -51,6 +51,7 @@ class LockScreen extends StatefulWidget {
     this.fingerPrintImage,
     this.showWrongPassDialog = false,
     this.strings = const PinLockStrings(),
+    this.onForgotPin,
     this.styles,
     this.shakeEnabled = true,
     this.shakeDuration = const Duration(milliseconds: 300),
@@ -133,6 +134,12 @@ class LockScreen extends StatefulWidget {
 
   /// Text strings the lock screen uses.
   final PinLockStrings strings;
+
+  /// Called when the user taps the forgot PIN button.
+  ///
+  /// The button is hidden when this is null. It stays enabled during a lockout
+  /// so the user can recover without waiting.
+  final VoidCallback? onForgotPin;
 
   /// Theme values for the lock screen.
   final PinLockTheme? styles;
@@ -551,6 +558,19 @@ class LockScreenState extends State<LockScreen>
                       ],
                     ),
                   ),
+                  if (widget.onForgotPin != null)
+                    Positioned(
+                      left: 24,
+                      right: 24,
+                      bottom: 8,
+                      child: TextButton(
+                        onPressed: widget.onForgotPin,
+                        style: TextButton.styleFrom(
+                          foregroundColor: styles.numberColor,
+                        ),
+                        child: Text(widget.strings.forgotPinLabel),
+                      ),
+                    ),
                   if (widget.showFingerPass)
                     Positioned(
                       top: 10,

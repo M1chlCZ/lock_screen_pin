@@ -10,6 +10,7 @@ dots, wrong-PIN feedback and optional biometric hooks.
 - Wrong-PIN dialog with configurable text
 - Biometric entry hooks: fingerprint area and automatic success
 - Attempt lockout with `maxAttempts` and `lockoutDuration`
+- Forgot PIN action that stays available during a lockout
 - PIN codec hook: keep only a hash with `PinCodec` and `expectedCode`
 - Haptic feedback on accepted and rejected entries
 - Themed PIN dots with size, spacing and border width
@@ -106,6 +107,25 @@ final attemptsLeft = lockScreenKey.currentState?.remainingAttempts;
 final locked = lockScreenKey.currentState?.isLockedOut ?? false;
 ```
 
+## Forgot PIN
+
+Pass `onForgotPin` to show a recovery action under the PIN dots. Users can
+reach it even while the keypad is locked out:
+
+```dart
+LockScreen(
+  title: 'Enter your PIN',
+  passLength: 4,
+  maxAttempts: 3,
+  passCodeVerify: (code) async => code.join() == '1234',
+  onSuccess: openHome,
+  onForgotPin: () => Navigator.pushNamed(context, '/recover'),
+);
+```
+
+The button is hidden when `onForgotPin` is null. Set
+`PinLockStrings.forgotPinLabel` to change the label.
+
 ## PIN codec
 
 Store only a hash of the PIN with `expectedCode` and `codec`. The default
@@ -193,12 +213,14 @@ and backspace labels come from `PinLockStrings`.
 - `hapticsEnabled` defaults to `true`.
 - `shakeEnabled` (default `true`), `shakeDuration` (default 300 ms) and
   `shakeOffset` (default 10) control the wrong-PIN shake.
+- `onForgotPin` adds a recovery button under the dots; it stays enabled during
+  a lockout.
 - `PinLockTheme` sets `dotSize` (25), `dotSpacing` (15) and `dotBorderWidth`
   (2) for the PIN dots.
 - `styles` on `LockScreen` takes precedence over a `PinLockTheme` in
   `ThemeData.extensions`.
-- `PinLockStrings` sets the labels for the clear key, the backspace key and
-  the wrong-PIN dialog.
+- `PinLockStrings` sets the labels for the clear key, the backspace key, the
+  forgot PIN button and the wrong-PIN dialog.
 
 ## Example
 

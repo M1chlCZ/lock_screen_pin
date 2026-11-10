@@ -25,6 +25,7 @@ void main() {
     GlobalKey<LockScreenState>? stateKey,
     bool shakeEnabled = true,
     bool reduceMotion = false,
+    VoidCallback? onForgotPin,
   }) {
     tester.view.physicalSize = const Size(700, 1600);
     tester.view.devicePixelRatio = 1.0;
@@ -57,6 +58,7 @@ void main() {
           styles: styles,
           strings: strings,
           shakeEnabled: shakeEnabled,
+          onForgotPin: onForgotPin,
         ),
       ),
     );
@@ -1068,6 +1070,46 @@ void main() {
         .map((decoration) => decoration.border!.top.width)
         .toSet();
     expect(widths, <double>{4});
+  });
+
+  testWidgets('hides the forgot PIN action without a callback', (tester) async {
+    await pumpLockScreen(tester, verify: (_) async => false);
+    expect(find.text('Forgot PIN?'), findsNothing);
+  });
+
+  testWidgets('calls onForgotPin and uses the custom label', (tester) async {
+    var taps = 0;
+    await pumpLockScreen(
+      tester,
+      verify: (_) async => false,
+      onForgotPin: () => taps++,
+      strings: const PinLockStrings(forgotPinLabel: 'Reset code'),
+    );
+
+    await tester.tap(find.text('Reset code'));
+    await tester.pump();
+
+    expect(taps, 1);
+  });
+
+  testWidgets('keeps the action available during a lockout', (tester) async {
+    var taps = 0;
+    await pumpLockScreen(
+      tester,
+      expectedCode: '1234',
+      maxAttempts: 2,
+      lockoutDuration: const Duration(days: 1),
+      onForgotPin: () => taps++,
+    );
+
+    await enterDigits(tester, '0000');
+    await tester.pump(const Duration(seconds: 1));
+    await enterDigits(tester, '0000');
+    await tester.pump();
+
+    expect(find.text('Forgot PIN?'), findsOneWidget);
+    await tester.tap(find.text('Forgot PIN?'));
+    expect(taps, 1);
   });
 }
 

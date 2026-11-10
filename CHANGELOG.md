@@ -6,6 +6,8 @@
 - Shake the passcode dots after a wrong entry. `shakeEnabled`,
   `shakeDuration`, and `shakeOffset` control the animation, and the screen
   skips it when the platform asks for reduced motion.
+- Add `onForgotPin` and `PinLockStrings.forgotPinLabel` for a PIN recovery
+  action that stays available during a lockout.
 
 ## [0.2.0] - 2026-10-18
 
