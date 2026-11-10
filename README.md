@@ -193,7 +193,7 @@ clear and backspace labels come from `PinLockStrings`.
 - `shakeEnabled` (default `true`), `shakeDuration` (default 300 ms), and
   `shakeOffset` (default 10) control the wrong-PIN shake.
 - `PinLockTheme` sets `dotSize` (25), `dotSpacing` (15), and `dotBorderWidth`
-  (1) for the PIN dots.
+  (2) for the PIN dots.
 - `styles` on `LockScreen` takes precedence over a `PinLockTheme` in
   `ThemeData.extensions`.
 - `PinLockStrings` sets the labels for the clear key, the backspace key, and

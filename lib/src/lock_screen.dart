@@ -612,7 +612,7 @@ class CodePanel extends StatelessWidget {
     this.dotFillColor = Colors.transparent,
     this.dotSize = 25,
     this.dotSpacing = 15,
-    this.dotBorderWidth = 1,
+    this.dotBorderWidth = 2,
     this.shakeOffset = 0,
     this.fingerVerify = false,
     this.status = CodePanelStatus.idle,
@@ -650,6 +650,9 @@ class CodePanel extends StatelessWidget {
   /// Current verification status.
   final CodePanelStatus status;
 
+  double get _filledBorderWidth =>
+      (dotBorderWidth - 1).clamp(1.0, double.infinity);
+
   Widget _buildDot({
     required double size,
     required Color borderColor,
@@ -682,7 +685,7 @@ class CodePanel extends StatelessWidget {
             size: dotSize,
             borderColor: color,
             fillColor: Colors.green.shade500,
-            borderWidth: 1,
+            borderWidth: _filledBorderWidth,
           ),
         );
       }
@@ -700,7 +703,7 @@ class CodePanel extends StatelessWidget {
               size: dotSize,
               borderColor: color,
               fillColor: dotFillColor,
-              borderWidth: 2,
+              borderWidth: dotBorderWidth,
             ),
           );
         } else {
@@ -709,7 +712,7 @@ class CodePanel extends StatelessWidget {
               size: dotSize,
               borderColor: color,
               fillColor: color,
-              borderWidth: 1,
+              borderWidth: _filledBorderWidth,
             ),
           );
         }

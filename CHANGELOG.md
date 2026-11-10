@@ -1,7 +1,8 @@
 ## [0.3.0] - 2026-11-10
 
 - Add `dotSize`, `dotSpacing`, and `dotBorderWidth` to `PinLockTheme`; the
-  passcode panel reads them from the theme.
+  passcode panel reads them from the theme. Filled dots keep a one-pixel
+  thinner border.
 - Shake the passcode dots after a wrong entry. `shakeEnabled`,
   `shakeDuration`, and `shakeOffset` control the animation, and the screen
   skips it when the platform asks for reduced motion.

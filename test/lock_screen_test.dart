@@ -1050,6 +1050,25 @@ void main() {
     expect(panel.dotSpacing, 9);
     expect(panel.dotBorderWidth, 2);
   });
+  testWidgets('renders the themed dot border width', (tester) async {
+    await pumpLockScreen(
+      tester,
+      verify: (_) async => false,
+      styles: const PinLockTheme(dotBorderWidth: 4),
+    );
+
+    final widths = tester
+        .widgetList<Container>(find.byType(Container))
+        .map((container) => container.decoration)
+        .whereType<BoxDecoration>()
+        .where(
+          (decoration) =>
+              decoration.shape == BoxShape.circle && decoration.border != null,
+        )
+        .map((decoration) => decoration.border!.top.width)
+        .toSet();
+    expect(widths, <double>{4});
+  });
 }
 
 class _ReversePinCodec implements PinCodec {

@@ -82,10 +82,11 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
   /// Defaults to `15`.
   double get dotSpacing => _dotSpacing ?? 15;
 
-  /// Border width of an empty passcode dot.
+  /// Border width of the passcode dots.
   ///
-  /// Defaults to `1`.
-  double get dotBorderWidth => _dotBorderWidth ?? 1;
+  /// Defaults to `2` for empty dots. Filled dots keep a one-pixel thinner
+  /// border.
+  double get dotBorderWidth => _dotBorderWidth ?? 2;
 
   /// Background color of the lock screen.
   ///
@@ -153,9 +154,15 @@ class PinLockTheme extends ThemeExtension<PinLockTheme> with Diagnosticable {
       numberColor: Color.lerp(_numberColor, other._numberColor, t),
       dotBorderColor: Color.lerp(_dotBorderColor, other._dotBorderColor, t),
       dotFillColor: Color.lerp(_dotFillColor, other._dotFillColor, t),
-      dotSize: lerpDouble(_dotSize, other._dotSize, t),
-      dotSpacing: lerpDouble(_dotSpacing, other._dotSpacing, t),
-      dotBorderWidth: lerpDouble(_dotBorderWidth, other._dotBorderWidth, t),
+      dotSize: _dotSize == null && other._dotSize == null
+          ? null
+          : lerpDouble(dotSize, other.dotSize, t),
+      dotSpacing: _dotSpacing == null && other._dotSpacing == null
+          ? null
+          : lerpDouble(dotSpacing, other.dotSpacing, t),
+      dotBorderWidth: _dotBorderWidth == null && other._dotBorderWidth == null
+          ? null
+          : lerpDouble(dotBorderWidth, other.dotBorderWidth, t),
       backgroundColor: Color.lerp(_backgroundColor, other._backgroundColor, t),
       keyColor: Color.lerp(_keyColor, other._keyColor, t),
       keyShadows: BoxShadow.lerpList(_keyShadows, other._keyShadows, t),
