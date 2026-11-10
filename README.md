@@ -12,6 +12,8 @@ PIN dots, wrong-PIN feedback, and optional biometric hooks.
 - Attempt lockout with `maxAttempts` and `lockoutDuration`
 - PIN codec hook: keep only a hash with `PinCodec` and `expectedCode`
 - Haptic feedback on accepted and rejected entries
+- Themed PIN dots with size, spacing, and border width
+- Shake animation on a wrong PIN that respects reduced motion
 - Accessibility labels on the keypad keys and the PIN dots
 - Theming with `PinLockTheme`, also as a `ThemeExtension`
 - Localizable labels with `PinLockStrings`
@@ -142,6 +144,38 @@ of the two is required.
 success and a heavy impact on a wrong entry. Biometric success fires no
 haptics. Set `hapticsEnabled` to `false` to disable haptics.
 
+## Styling
+
+`PinLockTheme` controls the PIN dots and the rest of the screen:
+
+```dart
+PinLockTheme(
+  dotSize: 20,
+  dotSpacing: 12,
+  dotBorderWidth: 2,
+  dotBorderColor: Colors.grey,
+  dotFillColor: Colors.blueGrey,
+)
+```
+
+Pass the theme to `LockScreen(styles: ...)` or register it with
+`ThemeData.extensions`.
+
+### Wrong PIN shake
+
+A wrong entry shakes the dots. Three `LockScreen` parameters control it:
+
+```dart
+LockScreen(
+  shakeEnabled: true,
+  shakeDuration: const Duration(milliseconds: 250),
+  shakeOffset: 12,
+  // ...
+);
+```
+
+The screen skips the shake when the platform asks for reduced motion.
+
 ## Accessibility
 
 The keypad keys announce labels such as "Digit 5". The code panel announces
@@ -156,6 +190,10 @@ clear and backspace labels come from `PinLockStrings`.
 - `maxAttempts` sets the wrong-entry limit; `lockoutDuration` defaults to 30
   seconds.
 - `hapticsEnabled` defaults to `true`.
+- `shakeEnabled` (default `true`), `shakeDuration` (default 300 ms), and
+  `shakeOffset` (default 10) control the wrong-PIN shake.
+- `PinLockTheme` sets `dotSize` (25), `dotSpacing` (15), and `dotBorderWidth`
+  (1) for the PIN dots.
 - `styles` on `LockScreen` takes precedence over a `PinLockTheme` in
   `ThemeData.extensions`.
 - `PinLockStrings` sets the labels for the clear key, the backspace key, and
