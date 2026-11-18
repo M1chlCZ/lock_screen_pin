@@ -1,4 +1,6 @@
 analyzer:
+  errors:
+    prefer_initializing_formals: ignore
   exclude:
     - build/**
     - android/**

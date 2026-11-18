@@ -1,3 +1,8 @@
+## [0.4.0] - 2026-11-18
+
+- Require Flutter 3.47 and Dart 3.13.
+- Use the `material_ui` package for Material widgets.
+
 ## [0.3.0] - 2026-11-10
 
 - Add `dotSize`, `dotSpacing`, and `dotBorderWidth` to `PinLockTheme`; the

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lock_screen_pin/lock_screen_pin.dart';
 
 void main() {

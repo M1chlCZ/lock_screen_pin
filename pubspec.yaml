@@ -2,7 +2,7 @@ name: lock_screen_pin
 description: >-
   A customizable PIN/passcode lock screen with keypad, code dots, optional
   biometrics entry, and themeable colors and strings.
-version: 0.3.0
+version: 0.4.0
 repository: https://github.com/M1chlCZ/lock_screen_pin
 issue_tracker: https://github.com/M1chlCZ/lock_screen_pin/issues
 topics:
@@ -12,10 +12,12 @@ topics:
   - security
   - lock-screen
 environment:
-  sdk: ^3.11.0
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
 dependencies:
   flutter:
     sdk: flutter
+  material_ui: ^1.11.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
